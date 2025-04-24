@@ -1,37 +1,42 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import joblib
+from sklearn.ensemble import RandomForestClassifier
+import pickle
 
-# Contoh data dummy (harus diganti dengan dataset asli jika ada)
-data = {
-    'protein': [10, 20, 5, 15, 25],
-    'karbohidrat': [30, 50, 20, 45, 60],
-    'kalori': [200, 350, 120, 300, 400],
-    'lemak': [5, 10, 2, 8, 15],
-    'akg': [20, 40, 10, 35, 50],
-    'label': ['rendah', 'tinggi', 'rendah', 'sedang', 'tinggi']
-}
+# Load the dataset
+df = pd.read_csv('hasil_klasifikasi_akg_200.csv')
 
-df = pd.DataFrame(data)
+# Handle missing values in jenis_kelamin
+df['jenis_kelamin'] = df['jenis_kelamin'].fillna(2.0)  # Using 2.0 for missing values
 
-# Preprocessing
-X = df[['protein', 'karbohidrat', 'kalori', 'lemak', 'akg']]
-y = df['label']
+# Prepare features (X) and target (y)
+X = df[['kategori_umur', 'jenis_kelamin', 'total_protein', 'total_lemak', 'total_karbohidrat', 'total_kalori']]
+y = df['klasifikasi']
 
-le = LabelEncoder()
-y_encoded = le.fit_transform(y)
+# Initialize and fit LabelEncoder for the target variable
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
 
-# Train-test split
+# Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
 
-# Train model
-model = RandomForestClassifier()
+# Initialize and train the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# Simpan model dan label encoder
-joblib.dump(model, 'model.pkl')
-joblib.dump(le, 'label_encoder.pkl')
+# Calculate and print accuracy
+train_accuracy = model.score(X_train, y_train)
+test_accuracy = model.score(X_test, y_test)
+print(f"Training Accuracy: {train_accuracy:.2f}")
+print(f"Testing Accuracy: {test_accuracy:.2f}")
 
-print("Model trained and saved.")
+# Save the model and label encoder
+with open('model.pkl', 'wb') as model_file:
+    pickle.dump(model, model_file)
+
+with open('label_encoder.pkl', 'wb') as le_file:
+    pickle.dump(label_encoder, le_file)
+
+print("Model and Label Encoder have been saved successfully!")
